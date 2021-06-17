@@ -3,22 +3,29 @@ import shutil
 
 from plugin import plugin
 
+
 @plugin("file manage")
 class file_manage:
     """"
-    Can manipulate files by deleting, moving, or renaming. 
-    """"
+    Can manipulate files and folders by deleting, moving, or renaming.
+    """
 
     def __call__(self, jarvis, s):
         self.get_file_directory(jarvis)
         self.get_cmd(jarvis)
 
         if self.cmd == "delete":
-            self.delete(jarvis,self.file)
+            self.delete(jarvis, self.file)
         elif self.cmd == "move":
-            self.move(jarvis,self.file)
+            self.move(jarvis, self.file)
         elif self.cmd == "rename":
-            self.rename(jarvis,self.file)
+            self.rename(jarvis, self.file)
+
+        # determine if directory entered is a file or folder
+        if os.path.isfile(self.file):
+            self.folder = False
+        else:
+            self.folder = True
 
     def get_file_directory(self, jarvis):
         self.file = jarvis.input("Enter the directory of the file you would like to edit: ")
@@ -49,33 +56,37 @@ class file_manage:
     def delete(self, jarvis, file):
         # function to delete files
 
-        # first, check if file exists
-        if os.path.exists(file):
+        if self.folder is False:
+            # first, check if file exists
+            if os.path.exists(file):
 
-            yes = True
-            while yes:
-                # confirm that file should be deleted
-                confirmation = jarvis.input("Are you sure you want to delete this file? This cannot be undone. (y/n)").lower()
+                yes = True
+                while yes:
+                    # confirm that file should be deleted
+                    confirmation = jarvis.input("Are you sure you want to delete this file? This cannot be undone. (y/n)").lower()
 
-                if confirmation == "y":
-                    try:
-                        # delete file
-                        os.remove(file)
-                    except:
-                        jarvis.say("Invalid file path")
+                    if confirmation == "y":
+                        try:
+                            # delete file
+                            if not self.folder:
+                                os.remove(file)
+                            else:
+                                os.rmdir(file)
+                        except:
+                            jarvis.say("Invalid file path")
 
-                    # break loop after removing file
-                    yes = False
+                        # break loop after removing file
+                        yes = False
 
-                elif confirmation == "n":
+                    elif confirmation == "n":
 
-                    # break loop if no confirmation
-                    yes = False
-                else:
-                    jarvis.say("Invalid input")
+                        # break loop if no confirmation
+                        yes = False
+                    else:
+                        jarvis.say("Invalid input")
 
-        else:
-            jarvis.say("file does not exist")
+            else:
+                jarvis.say("file does not exist")
 
     def move(self, jarvis, file):
         # function to move files
@@ -103,7 +114,7 @@ class file_manage:
             # get root directory
             root = os.path.split(file)[0]
 
-            new_dir = os.path.join(root,new_name)
+            new_dir = os.path.join(root, new_name)
 
             try:
                 os.rename(file, new_dir)
